@@ -5,3 +5,9 @@ category = "Race"
 
 siteid = 118
 version = "1.11.1"
+
+[script]
+module = "UltimateMedals"
+exports = [ "UltimateMedalsAPI.as" ]
+shared_exports = [ "UltimateMedalsSharedAPI.as" ]
+optional_dependencies = [ "SuperMedals", "ChampionMedals" ]

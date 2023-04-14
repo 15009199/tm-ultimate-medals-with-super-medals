@@ -5,6 +5,20 @@ bool showHeader = true;
 bool showPbest = true;
 
 #if TMNEXT||MP4
+#if DEPENDENCY_CHAMPIONMEDALS
+[Setting category="Medals" name="Show Champion"]
+bool showChampion = true;
+#endif
+#if DEPENDENCY_SUPERMEDALS
+[Setting category="Medals" name="Show Super Gold"]
+bool showSgold = false;
+
+[Setting category="Medals" name="Show Super Silver"]
+bool showSsilver = false;
+
+[Setting category="Medals" name="Show Super Bronze"]
+bool showSbronze = false;
+#endif
 [Setting category="Medals" name="Show Author"]
 bool showAuthor = true;
 
@@ -85,6 +99,20 @@ int fontSize = 16;
 
 /* Custom names */
 #if TMNEXT||MP4
+#if DEPENDENCY_CHAMPIONMEDALS
+[Setting category="Display Text" name="Champion Text"]
+string championText = "Champion";
+#endif
+#if DEPENDENCY_SUPERMEDALS
+[Setting category="Display Text" name="Super Gold Text"]
+string sgoldText = "S. Gold";
+
+[Setting category="Display Text" name="Super Silver Text"]
+string ssilverText = "S. Silver";
+
+[Setting category="Display Text" name="Super Bronze Text"]
+string sbronzeText = "S. Bronze";
+#endif
 [Setting category="Display Text" name="Author Text"]
 string authorText = "Author";
 
@@ -124,6 +152,14 @@ const array<string> medals = {
 	"\\$db4" + Icons::Circle, // gold medal
 #if TMNEXT||MP4
 	"\\$071" + Icons::Circle, // author medal
+#if DEPENDENCY_SUPERMEDALS
+    "\\$964" + Icons::Kenney::ButtonCircle, // super bronze medal
+	"\\$899" + Icons::Kenney::ButtonCircle, // super silver medal
+	"\\$db4" + Icons::Kenney::ButtonCircle, // super gold medal
+#endif
+#if DEPENDENCY_CHAMPIONMEDALS
+    "\\$d35" + Icons::Circle, // champion medal
+#endif
 #elif TURBO
 	"\\$0f1" + Icons::Circle, // trackmaster medal
 	"\\$964" + Icons::Circle, // super bronze medal
@@ -199,6 +235,14 @@ class Record {
 }
 
 #if TMNEXT||MP4
+#if DEPENDENCY_CHAMPIONMEDALS
+Record@ champion = Record(championText, medals.Find("\\$d35" + Icons::Circle), -9);
+#endif
+#if DEPENDENCY_SUPERMEDALS
+Record@ sgold = Record(sgoldText, medals.Find("\\$db4" + Icons::Kenney::ButtonCircle), -8);
+Record@ ssilver = Record(ssilverText, medals.Find("\\$899" + Icons::Kenney::ButtonCircle), -7);
+Record@ sbronze = Record(sbronzeText, medals.Find("\\$964" + Icons::Kenney::ButtonCircle), -6);
+#endif
 Record@ author = Record(authorText, 4, -5);
 #elif TURBO
 Record@ stmaster = Record(stmasterText, 8, -9);
@@ -213,7 +257,15 @@ Record@ bronze = Record(bronzeText, 1, -2);
 Record@ pbest = Record(pbestText, 0, -1, "\\$0ff");
 
 #if TMNEXT||MP4
-array<Record@> times = {author, gold, silver, bronze, pbest};
+array<Record@> times = {
+#if DEPENDENCY_CHAMPIONMEDALS
+    champion,
+#endif
+#if DEPENDENCY_SUPERMEDALS
+    sgold, ssilver, sbronze,
+#endif
+    author, gold, silver, bronze, pbest
+};
 #elif TURBO
 array<Record@> times = {stmaster, sgold, ssilver, sbronze, tmaster, gold, silver, bronze, pbest};
 
@@ -463,6 +515,14 @@ void LoadFont() {
 
 void UpdateHidden() {
 #if TMNEXT||MP4
+#if DEPENDENCY_CHAMPIONMEDALS
+    champion.hidden = !showChampion;
+#endif
+#if DEPENDENCY_SUPERMEDALS
+    sgold.hidden = !showSgold;
+	ssilver.hidden = !showSsilver;
+	sbronze.hidden = !showSbronze;
+#endif
 	author.hidden = !showAuthor;
 #elif TURBO
 	// If no super times, never show them
@@ -480,6 +540,14 @@ void UpdateHidden() {
 
 void UpdateText() {
 #if TMNEXT||MP4
+#if DEPENDENCY_CHAMPIONMEDALS
+    champion.name = championText;
+#endif
+#if DEPENDENCY_SUPERMEDALS
+    sgold.name = sgoldText;
+	ssilver.name = ssilverText;
+	sbronze.name = sbronzeText;
+#endif
 	author.name = authorText;
 #elif TURBO
 	stmaster.name = stmasterText;
@@ -524,6 +592,14 @@ void Main() {
 		if(windowVisible && map !is null && map.MapInfo.MapUid != "" && app.Editor is null) {
 			if(currentMapUid != map.MapInfo.MapUid) {
 #if TMNEXT||MP4
+#if DEPENDENCY_CHAMPIONMEDALS
+                champion.time = ChampionMedals::GetCMTime();
+#endif
+#if DEPENDENCY_SUPERMEDALS
+                sgold.time = SuperMedals::GetSGoldTime();
+                ssilver.time = SuperMedals::GetSSilverTime();
+                sbronze.time = SuperMedals::GetSBronzeTime();
+#endif
 				author.time = map.TMObjective_AuthorTime;
 #elif TURBO
 				int mapNumber = Text::ParseInt(map.MapName);
@@ -576,7 +652,23 @@ void Main() {
 				// ScopeType can be: "Season", "PersonalBest"
 				// GameMode can be: "TimeAttack", "Follow", "ClashTime"
 				pbest.time = scoreMgr.Map_GetRecord_v2(userId, map.MapInfo.MapUid, "PersonalBest", "", "TimeAttack", "");
+#if DEPENDENCY_CHAMPIONMEDALS
+                if (pbest.time <= champion.time) {
+                    pbest.medal = 8;
+#if DEPENDENCY_SUPERMEDALS
+                } else if (pbest.time <= sgold.time) {
+                    pbest.medal = 7;
+                } else if (pbest.time <= ssilver.time) {
+                    pbest.medal = 6;
+                } else if (pbest.time <= sbronze.time) {
+                    pbest.medal = 5;
+#endif
+                } else {
+                    pbest.medal = scoreMgr.Map_GetMedal(userId, map.MapInfo.MapUid, "PersonalBest", "", "TimeAttack", "");
+                }
+#else
 				pbest.medal = scoreMgr.Map_GetMedal(userId, map.MapInfo.MapUid, "PersonalBest", "", "TimeAttack", "");
+#endif
 			}
 #elif TURBO
 			if(network.TmRaceRules !is null) {
@@ -654,6 +746,14 @@ void Main() {
 			
 		} else if(map is null || map.MapInfo.MapUid == "") {
 #if TMNEXT||MP4
+#if DEPENDENCY_CHAMPIONMEDALS
+            champion.time = -9;
+#endif
+#if DEPENDENCY_SUPERMEDALS
+            sgold.time = -8;
+            ssilver.time = -7;
+            sbronze.time = -6;
+#endif
 			author.time = -5;
 #elif TURBO
 			stmaster.time = -9;
